@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Vibe Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <style>
+    :root{
+      --bg:#07111f;
+      --panel:#101a2b;
+      --panel-2:#132033;
+      --card:rgba(255,255,255,.06);
+      --card-2:rgba(255,255,255,.1);
+      --text:#eef6ff;
+      --muted:rgba(238,246,255,.72);
+      --accent:#41f0ff;
+      --accent-2:#7c9cff;
+      --danger:#ff5b76;
+      --good:#4cff9a;
+      --warn:#ffc94d;
+      --shadow:0 24px 80px rgba(0,0,0,.45);
+      --radius:28px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Space Grotesk",system-ui,sans-serif;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(65,240,255,.16), transparent 28%),
+        radial-gradient(circle at 85% 12%, rgba(124,156,255,.18), transparent 26%),
+        radial-gradient(circle at 70% 80%, rgba(76,255,154,.12), transparent 25%),
+        linear-gradient(180deg,#06101c 0%, #07111f 42%, #040912 100%);
+      color:var(--text);
+      overflow:hidden;
+    }
+    button,input,textarea{font:inherit}
+    button{
+      border:0;
+      cursor:pointer;
+      color:inherit;
+      background:none;
+      transition:.18s ease;
+    }
+    input,textarea{
+      width:100%;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      border-radius:16px;
+      padding:14px 16px;
+      outline:none;
+    }
+    textarea{min-height:140px; resize:vertical; line-height:1.5}
+    .screen{
+      min-height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .login-shell,.app-shell{
+      width:min(1280px,100%);
+      background:rgba(8,14,24,.78);
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(24px);
+      border-radius:32px;
+      overflow:hidden;
+    }
+    .login-shell{
+      width:min(620px,100%);
+      padding:30px;
+    }
+    .eyebrow{
+      display:inline-flex;
+      gap:10px;
+      align-items:center;
+      padding:8px 14px;
+      border-radius:999px;
+      background:rgba(65,240,255,.12);
+      color:var(--accent);
+      font-size:12px;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+      margin-bottom:16px;
+    }
+    h1,h2,h3,p{margin:0}
+    .login-title{font-size:42px; line-height:1.02; margin-bottom:14px}
+    .login-sub{color:var(--muted); line-height:1.6; margin-bottom:22px}
+    .login-grid{display:grid; gap:14px}
+    .row{display:grid; gap:14px}
+    .btn{
+      width:100%;
+      border-radius:16px;
+      padding:14px 16px;
+      font-weight:700;
+    }
+    .btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:#001018}
+    .btn-ghost{background:rgba(255,255,255,.08)}
+    .hint{
+      margin-top:14px;
+      padding:14px 16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.05);
+      color:var(--muted);
+      line-height:1.5;
+      font-size:13px;
+    }
+    .app-shell{height:min(94dvh,980px); display:none; flex-direction:column; overflow:hidden}
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      align-items:center;
+      padding:18px 20px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      background:linear-gradient(180deg,rgba(255,255,255,.05),transparent);
+    }
+    .brand h2{font-size:24px}
+    .brand p{font-size:12px; color:var(--muted); margin-top:4px}
+    .top-actions{display:flex; gap:10px; flex-wrap:wrap}
+    .chip-btn{
+      padding:11px 14px;
+      border-radius:14px;
+      background:rgba(255,255,255,.08);
+      font-weight:700;
+    }
+    .chip-btn.primary{background:var(--accent); color:#001018}
+    .mobile-back-btn{display:none}
+    .layout{
+      display:grid;
+      grid-template-columns:280px minmax(0,1fr);
+      min-height:0;
+      height:100%;
+      flex:1;
+    }
+    .sidebar{
+      padding:18px;
+      border-right:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.02);
+      overflow:auto;
+    }
+    .sidebar-card,.content-card,.stat-card,.row-card,.log-item,.modal{
+      border:1px solid rgba(255,255,255,.08);
+      background:var(--card);
+    }
+    .sidebar-card{
+      border-radius:24px;
+      padding:18px;
+      margin-bottom:14px;
+      background:linear-gradient(135deg,rgba(65,240,255,.12),rgba(124,156,255,.07));
+    }
+    .sidebar-card .title{font-size:18px; margin-bottom:8px}
+    .sidebar-card .text{font-size:12px; color:var(--muted); line-height:1.6}
+    .mini-stats{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px}
+    .mini{padding:14px; border-radius:18px; background:rgba(255,255,255,.05)}
+    .mini b{display:block; font-size:20px; margin-top:6px}
+    .tabs{display:grid; gap:8px}
+    .tab{
+      width:100%;
+      text-align:left;
+      padding:14px 15px;
+      border-radius:16px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.05);
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      color:var(--text);
+      font-weight:700;
+    }
+    .tab.active{
+      background:linear-gradient(90deg,rgba(65,240,255,.18),rgba(124,156,255,.14));
+      border-color:rgba(65,240,255,.25);
+    }
+    .content{
+      padding:18px;
+      overflow:auto;
+      min-width:0;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+    }
+    .stat-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .stat-card{
+      border-radius:22px;
+      padding:18px;
+      background:rgba(255,255,255,.05);
+    }
+    .label{font-size:12px; color:var(--muted)}
+    .value{font-size:32px; font-weight:800; margin-top:8px}
+    .meta{font-size:12px; color:var(--muted); margin-top:5px}
+    .section-head{
+      display:flex;
+      justify-content:space-between;
+      gap:14px;
+      align-items:flex-start;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .section-head h3{font-size:24px; margin-bottom:6px}
+    .section-head p{font-size:13px; color:var(--muted); line-height:1.5}
+    .section-tools{display:flex; gap:10px; flex-wrap:wrap}
+    .tool{padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.08); font-weight:700}
+    .tool.primary{background:var(--accent); color:#001018}
+    .toolbar{display:grid; grid-template-columns:minmax(0,1fr) 180px; gap:10px; margin-bottom:14px}
+    .list{display:grid; gap:10px}
+    .row-card,.log-item{
+      border-radius:20px;
+      padding:14px 16px;
+    }
+    .row-card{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+    }
+    .row-title{font-weight:700}
+    .row-sub{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.45}
+    .row-actions{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.08);
+      font-size:11px;
+      margin-right:6px;
+      margin-top:6px;
+    }
+    .log-item b{display:block; margin-bottom:5px}
+    .log-item .small{font-size:11px; color:var(--muted); margin-top:8px}
+    .split{display:grid; gap:12px}
+    #section{min-height:0; flex:1}
+    #section .split{min-height:0}
+    #section .list{min-height:0}
+    .admin-perms{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+    .perm{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      padding:12px 14px;
+      border-radius:16px;
+      background:rgba(255,255,255,.05);
+    }
+    .perm input{width:auto; margin:0}
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(0,0,0,.74);
+      backdrop-filter:blur(14px);
+      z-index:50;
+    }
+    .modal{
+      width:min(640px,100%);
+      border-radius:28px;
+      padding:22px;
+      background:#101927;
+      box-shadow:var(--shadow);
+    }
+    .modal.wide{width:min(860px,100%)}
+    .modal-head{display:flex; justify-content:space-between; gap:10px; align-items:flex-start; margin-bottom:14px}
+    .modal-head h3{font-size:24px; margin-bottom:6px}
+    .modal-head p{font-size:13px; color:var(--muted); line-height:1.5}
+    .steps{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 14px}
+    .step{padding:7px 10px; border-radius:999px; background:rgba(255,255,255,.08); font-size:11px}
+    .step.active{background:rgba(65,240,255,.2)}
+    .footer-actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
+    .footer-actions .tool{flex:1}
+    .empty{padding:18px; border-radius:18px; background:rgba(255,255,255,.05); color:var(--muted)}
+    .mobile-only{display:none}
+    @media (max-width: 960px){
+      body{overflow:hidden}
+      .screen{align-items:stretch; padding:10px; min-height:100dvh}
+      .app-shell{height:100dvh; min-height:0}
+      .layout{grid-template-columns:1fr}
+      .sidebar{border-right:0; border-bottom:1px solid rgba(255,255,255,.06)}
+      .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .toolbar{grid-template-columns:1fr}
+      .content{overflow:auto}
+      .sidebar{max-height:100%; padding:12px}
+      .sidebar-card,.mini-stats{display:none}
+      .tabs{gap:10px}
+      .tab{border-radius:18px; padding:16px 18px}
+      .mobile-back-btn{display:inline-flex}
+      .app-shell[data-mobile-view="tabs"] .content{display:none}
+      .app-shell[data-mobile-view="section"] .sidebar{display:none}
+      .app-shell[data-mobile-view="section"] .content{display:flex; flex-direction:column}
+    }
+    @media (max-width: 720px){
+      .screen{padding:14px}
+      .login-shell{padding:22px}
+      .login-title{font-size:32px}
+      .topbar{align-items:flex-start; padding:14px}
+      .top-actions{width:100%}
+      .chip-btn{width:100%; text-align:center}
+      .stat-grid{grid-template-columns:1fr}
+      .mini-stats{grid-template-columns:1fr 1fr}
+      .row-card{flex-direction:column; align-items:flex-start; padding:16px}
+      .row-actions{width:100%; justify-content:flex-start}
+      .row-actions .tool{flex:1; min-width:calc(50% - 4px)}
+      .tab{padding:16px}
+      .sidebar{padding:10px 12px}
+      .content{padding:14px}
+      .section-head h3{font-size:22px}
+      .section-tools{width:100%}
+      .section-tools .tool{flex:1}
+      .toolbar{margin-bottom:12px}
+      .list{gap:12px}
+      .value{font-size:28px}
+      .log-item,.row-card{border-radius:18px}
+      .modal-backdrop{padding:10px}
+      .modal{padding:18px;border-radius:24px}
+      .modal-head{flex-direction:column}
+      .admin-perms{grid-template-columns:1fr}
+      .footer-actions .tool{flex:unset; width:100%}
+      .mobile-back-btn{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div id="loginScreen" class="screen">
+    <div class="login-shell">
+      <div class="eyebrow">Vibe Admin</div>
+      <h1 class="login-title">Приветствую, это админ панель месенжера Vibe</h1>
+      <p class="login-sub">
+        Отдельный сайт админки с доступом к реальным данным: пользователи, онлайн, админы, журнал действий,
+        объявления, рассылки и тех. перерыв.
+      </p>
+      <div class="login-grid">
+        <input id="loginInput" type="text" placeholder="Логин" autocomplete="username">
+        <input id="passInput" type="password" placeholder="Пароль" autocomplete="current-password">
+        <button class="btn btn-primary" onclick="login()">Войти</button>
+      </div>
+      
+      </div>
+    </div>
+  </div>
+
+  <div id="appShell" class="app-shell">
+    <div class="topbar">
+      <div class="brand">
+        <h2>Vibe Admin</h2>
+        <p id="sessionInfo">Подключение...</p>
+      </div>
+      <div class="top-actions">
+        <button id="mobileBackBtn" class="chip-btn mobile-back-btn" onclick="backToTabs()">Назад</button>
+        <button class="chip-btn" onclick="refreshAll()">Обновить</button>
+        <button class="chip-btn" onclick="logout()">Выйти</button>
+      </div>
+    </div>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-card">
+          <div class="title" id="welcomeTitle">...</div>
+          <div class="text">Здесь ты управляешь Vibe как отдельной админ-панелью. Права по вкладкам можно выдавать и снимать прямо в интерфейсе.</div>
+        </div>
+        <div class="mini-stats">
+          <div class="mini"><span class="label">Зарегистрированы</span><b id="miniTotal">0</b></div>
+          <div class="mini"><span class="label">Сейчас онлайн</span><b id="miniOnline">0</b></div>
+          <div class="mini"><span class="label">Админы</span><b id="miniAdmins">0</b></div>
+          <div class="mini"><span class="label">Удалённые</span><b id="miniDeleted">0</b></div>
+        </div>
+        <div class="tabs" id="tabs"></div>
+      </aside>
+      <main class="content">
+        <div class="stat-grid">
+          <div class="stat-card"><div class="label">Зарегистрированы</div><div class="value" id="statTotal">0</div><div class="meta">Все аккаунты Vibe</div></div>
+          <div class="stat-card"><div class="label">Онлайн</div><div class="value" id="statOnline">0</div><div class="meta">Обновляется в реальном времени</div></div>
+          <div class="stat-card"><div class="label">Админы</div><div class="value" id="statAdmins">0</div><div class="meta">Текущие администраторы</div></div>
+          <div class="stat-card"><div class="label">Удалённые</div><div class="value" id="statDeleted">0</div><div class="meta">Скрытые аккаунты</div></div>
+        </div>
+        <div id="section"></div>
+      </main>
+    </div>
+  </div>
+
+  <div id="modalRoot" class="modal-backdrop"></div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAcs0ELY176L-d0qLZlpj1aJcej2b8fdPI",
+      authDomain: "vtcty-6c839.firebaseapp.com",
+      projectId: "vtcty-6c839",
+      databaseURL: "https://vtcty-6c839-default-rtdb.europe-west1.firebasedatabase.app",
+      storageBucket: "vtcty-6c839.firebasestorage.app"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const TAB_DEFS = [
+      { key: 'dashboard', label: 'Сводка' },
+      { key: 'users', label: 'Пользователи' },
+      { key: 'admins', label: 'Админы' },
+      { key: 'logs', label: 'Логи' },
+      { key: 'announcement', label: 'Объявление' },
+      { key: 'broadcast', label: 'Рассылка' },
+      { key: 'tech', label: 'Тех. перерыв' }
+    ];
+
+    const state = {
+      session: null,
+      activeTab: 'dashboard',
+      mobileView: 'tabs',
+      userMode: 'verify',
+      filter: '',
+      users: {},
+      admins: {},
+      logs: [],
+      announcement: null,
+      broadcast: null,
+      tech: false,
+      liveBound: false,
+      wizard: null
+    };
+
+    const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const $ = id => document.getElementById(id);
+    const now = () => Date.now();
+    const rootAdminDefaults = {
+      name: 'Artem',
+      login: 'artem',
+      passwordHash: btoa('230493'),
+      master: true,
+      tabs: Object.fromEntries(TAB_DEFS.map(t => [t.key, true])),
+      createdAt: now()
+    };
+
+    function permsObject(source) {
+      const out = {};
+      TAB_DEFS.forEach(tab => out[tab.key] = source ? source[tab.key] !== false : true);
+      return out;
+    }
+    function can(tab) {
+      if (!state.session) return false;
+      if (state.session.master) return true;
+      return !!(state.session.permissions && state.session.permissions[tab]);
+    }
+    function sessionTabs() {
+      return TAB_DEFS.filter(t => can(t.key));
+    }
+    function isMobileMode() {
+      return window.matchMedia && window.matchMedia('(max-width: 960px)').matches;
+    }
+    function summary() {
+      const users = Object.values(state.users || {});
+      return {
+        total: users.length,
+        online: users.filter(u => u && u.online).length,
+        deleted: users.filter(u => u && u.isDeleted).length,
+        admins: Object.keys(state.admins || {}).length
+      };
+    }
+    async function ensureRootAdmin() {
+      const ref = db.ref('adminPanel/admins/root');
+      const snap = await ref.once('value');
+      if (!snap.exists()) await ref.set(rootAdminDefaults);
+    }
+    async function loadSnapshot() {
+      const [usersSnap, adminsSnap, logsSnap, annSnap, brdSnap, techSnap] = await Promise.all([
+        db.ref('users').once('value'),
+        db.ref('adminPanel/admins').once('value'),
+        db.ref('adminPanel/logs').limitToLast(80).once('value'),
+        db.ref('settings/announcement').once('value'),
+        db.ref('settings/broadcast').once('value'),
+        db.ref('settings/techBreak').once('value')
+      ]);
+      state.users = usersSnap.val() || {};
+      state.admins = adminsSnap.val() || {};
+      state.logs = [];
+      logsSnap.forEach(child => state.logs.push({ id: child.key, ...(child.val() || {}) }));
+      state.announcement = annSnap.val() || null;
+      state.broadcast = brdSnap.val() || null;
+      state.tech = !!techSnap.val();
+    }
+    function bindLive() {
+      if (state.liveBound) return;
+      state.liveBound = true;
+      db.ref('users').on('value', snap => { state.users = snap.val() || {}; render(); });
+      db.ref('adminPanel/admins').on('value', snap => { state.admins = snap.val() || {}; render(); });
+      db.ref('adminPanel/logs').limitToLast(80).on('value', snap => {
+        state.logs = [];
+        snap.forEach(child => state.logs.push({ id: child.key, ...(child.val() || {}) }));
+        render();
+      });
+      db.ref('settings/announcement').on('value', snap => { state.announcement = snap.val() || null; render(); });
+      db.ref('settings/broadcast').on('value', snap => { state.broadcast = snap.val() || null; render(); });
+      db.ref('settings/techBreak').on('value', snap => { state.tech = !!snap.val(); render(); });
+    }
+    function unbindLive() {
+      if (!state.liveBound) return;
+      db.ref('users').off();
+      db.ref('adminPanel/admins').off();
+      db.ref('adminPanel/logs').off();
+      db.ref('settings/announcement').off();
+      db.ref('settings/broadcast').off();
+      db.ref('settings/techBreak').off();
+      state.liveBound = false;
+    }
+    async function logAction(action, details, target) {
+      if (!state.session) return;
+      await db.ref('adminPanel/logs').push({
+        ts: now(),
+        action,
+        details: details || '',
+        target: target || '',
+        actorId: state.session.id || '',
+        actorLogin: state.session.login || '',
+        actorName: state.session.name || state.session.login || ''
+      });
+    }
+
+    function showLogin() {
+      closeModal();
+      $('loginScreen').style.display = 'flex';
+      $('appShell').style.display = 'none';
+      document.title = 'Vibe Admin';
+    }
+    function showApp() {
+      $('loginScreen').style.display = 'none';
+      $('appShell').style.display = 'flex';
+      document.title = 'Vibe Admin • ' + (state.session?.name || 'Admin');
+    }
+    function renderTabs() {
+      const tabs = sessionTabs();
+      if (tabs.length && !tabs.some(t => t.key === state.activeTab)) state.activeTab = tabs[0].key;
+      $('tabs').innerHTML = tabs.map(tab => `<button class="tab ${state.activeTab === tab.key ? 'active' : ''}" onclick="setTab('${tab.key}')"><span>${tab.label}</span><span>›</span></button>`).join('');
+    }
+    function renderStats() {
+      const s = summary();
+      $('statTotal').textContent = s.total;
+      $('statOnline').textContent = s.online;
+      $('statAdmins').textContent = s.admins;
+      $('statDeleted').textContent = s.deleted;
+      $('miniTotal').textContent = s.total;
+      $('miniOnline').textContent = s.online;
+      $('miniAdmins').textContent = s.admins;
+      $('miniDeleted').textContent = s.deleted;
+      $('sessionInfo').textContent = `${state.session?.name || state.session?.login || 'Admin'} • ${state.session?.master ? 'owner' : 'admin'}`;
+      $('welcomeTitle').textContent = `Здравствуйте, ${state.session?.name || state.session?.login || 'Админ'}`;
+      const back = $('mobileBackBtn');
+      if (back) back.style.display = isMobileMode() && state.mobileView === 'section' ? 'inline-flex' : 'none';
+    }
+    function render() {
+      if (!state.session) {
+        showLogin();
+        return;
+      }
+      if (isMobileMode()) {
+        $('appShell').dataset.mobileView = state.mobileView;
+      } else {
+        $('appShell').dataset.mobileView = 'desktop';
+      }
+      if (state.activeTab === 'dashboard' && !can('dashboard')) {
+        state.activeTab = sessionTabs()[0]?.key || 'users';
+      }
+      showApp();
+      renderTabs();
+      renderStats();
+      const section = $('section');
+      if (section) section.scrollTop = 0;
+      const contentHtml =
+        state.activeTab === 'dashboard' ? dashboardHtml() :
+        state.activeTab === 'users' ? usersHtml() :
+        state.activeTab === 'admins' ? adminsHtml() :
+        state.activeTab === 'logs' ? logsHtml() :
+        state.activeTab === 'announcement' ? announcementHtml() :
+        state.activeTab === 'broadcast' ? broadcastHtml() :
+        state.activeTab === 'tech' ? techHtml() :
+        '<div class="empty">Раздел не найден.</div>';
+      section.innerHTML = isMobileMode() && state.mobileView === 'section'
+        ? mobileSectionWrap(contentHtml)
+        : contentHtml;
+    }
+    function mobileSectionWrap(html) {
+      const label = TAB_DEFS.find(t => t.key === state.activeTab)?.label || 'Раздел';
+      return `
+        <div class="split">
+          <div class="section-head">
+            <div>
+              <h3>${esc(label)}</h3>
+              <p>Мобильный режим раздела. Нажми назад, чтобы вернуться к списку вкладок.</p>
+            </div>
+            <div class="section-tools">
+              <button class="tool" onclick="backToTabs()">Назад</button>
+            </div>
+          </div>
+          ${html}
+        </div>`;
+    }
+    function setTab(tab){
+      state.activeTab = tab;
+      if (isMobileMode()) state.mobileView = 'section';
+      render();
+    }
+    function backToTabs(){
+      if (!isMobileMode()) return;
+      state.mobileView = 'tabs';
+      render();
+    }
+    function refreshAll(){ loadSnapshot().then(render).catch(console.error); }
+    function logout(){ closeModal(); unbindLive(); state.session = null; state.activeTab='dashboard'; state.mobileView='tabs'; state.userMode='verify'; state.filter=''; state.wizard=null; state.users={}; state.admins={}; state.logs=[]; showLogin(); }
+
+    async function login() {
+      try {
+        await ensureRootAdmin();
+        await loadSnapshot();
+        const login = $('loginInput').value.trim().toLowerCase();
+        const pass = $('passInput').value;
+        if (!login || !pass) return alert('Введи логин и пароль.');
+        const admin = Object.entries(state.admins).find(([, a]) => {
+          if (!a) return false;
+          const stored = String(a.passwordHash || a.password || '');
+          return String(a.login || '').trim().toLowerCase() === login && (stored === btoa(pass) || stored === pass);
+        });
+        if (!admin) return alert('Неверный логин или пароль.');
+        const [id, a] = admin;
+        state.session = {
+          id,
+          name: a.name || a.login || login,
+          login: a.login || login,
+          master: !!a.master,
+          permissions: permsObject(a.tabs || {})
+        };
+        state.activeTab = can('dashboard') ? 'dashboard' : (sessionTabs()[0]?.key || 'users');
+        bindLive();
+        await logAction('login', 'Вход в админ-панель');
+        render();
+      } catch (e) {
+        console.error(e);
+        alert('Ошибка входа: ' + e.message);
+      }
+    }
+
+    function dashboardHtml(){
+      const recent = state.logs.slice(-5).reverse();
+      return `
+        <div class="split">
+          <div class="section-head">
+            <div>
+              <h3>Сводка в реальном времени</h3>
+              <p>Здесь видно количество регистраций, онлайн, текущих админов и последние действия.</p>
+            </div>
+            <div class="section-tools">
+              <button class="tool primary" onclick="setTab('users')">Пользователи</button>
+              <button class="tool" onclick="setTab('admins')">Админы</button>
+              <button class="tool" onclick="openAdminWizard()">Добавить админа</button>
+            </div>
+          </div>
+          <div class="list">
+            <div class="content-card stat-card" style="padding:18px;border-radius:24px">
+              <div class="label">Быстрые действия</div>
+              <div class="meta" style="margin-top:8px">Переходы к пользователям, администраторам, рассылкам и тех. перерыву.</div>
+            </div>
+            <div class="content-card stat-card" style="padding:18px;border-radius:24px">
+              <div class="label">Последние записи</div>
+              <div class="list" style="margin-top:12px">${recent.map(renderLog).join('') || '<div class="empty">Пока нет действий.</div>'}</div>
+            </div>
+          </div>
+        </div>`;
+    }
+    function usersHtml(){
+      const q = state.filter.trim().toLowerCase();
+      const users = Object.entries(state.users).filter(([,u]) => {
+        if (!u) return false;
+        if (!q) return true;
+        return [u.name, u.handle, u.bio].filter(Boolean).join(' ').toLowerCase().includes(q);
+      });
+      const mode = state.userMode === 'delete' ? 'delete' : 'verify';
+      return `
+        <div class="split">
+          <div class="section-head">
+            <div>
+              <h3>${mode === 'delete' ? 'Удаление аккаунтов' : 'Галочки'}</h3>
+              <p>Реальные действия по пользователям: выдача галочки, удаление и восстановление.</p>
+            </div>
+            <div class="section-tools">
+              <button class="tool ${mode==='verify' ? 'primary' : ''}" onclick="setUserMode('verify')">Галочки</button>
+              <button class="tool ${mode==='delete' ? 'primary' : ''}" onclick="setUserMode('delete')">Удаление</button>
+            </div>
+          </div>
+          <div class="toolbar">
+            <input value="${esc(state.filter)}" placeholder="Поиск по имени или логину" oninput="searchUsers(this.value)">
+            <button class="tool" onclick="searchUsers('')">Сбросить</button>
+          </div>
+          <div class="list">
+            ${users.map(([id,u]) => userRow(id,u,mode)).join('') || '<div class="empty">Пользователей не найдено.</div>'}
+          </div>
+        </div>`;
+    }
+    function adminsHtml(){
+      const admins = Object.entries(state.admins).filter(([,a]) => a);
+      return `
+        <div class="split">
+          <div class="section-head">
+            <div>
+              <h3>Текущие админы</h3>
+              <p>Измени логин, пароль, вкладки или удали доступ. Здесь же можно добавить нового админа.</p>
+            </div>
+            <div class="section-tools">
+              <button class="tool primary" onclick="openAdminWizard()">Добавить админа</button>
+            </div>
+          </div>
+          <div class="list">
+            ${admins.map(([id,a]) => adminRow(id,a)).join('') || '<div class="empty">Админов пока нет.</div>'}
+          </div>
+        </div>`;
+    }
+    function logsHtml(){
+      return `
+        <div class="split">
+          <div class="section-head">
+            <div>
+              <h3>Что делали админы</h3>
+              <p>Журнал действий с точным временем, именем и описанием.</p>
+            </div>
+            <div class="section-tools">
+              <button class="tool" onclick="refreshAll()">Обновить</button>
+            </div>
+          </div>
+          <div class="list">${state.logs.slice().reverse().map(renderLog).join('') || '<div class="empty">Записей пока нет.</div>'}</div>
+        </div>`;
+    }
+    function announcementHtml(){
+      const ann = state.announcement || {};
+      return `
+        <div class="split">
+          <div class="section-head">
+            <div>
+              <h3>Объявление</h3>
+              <p>Показывается поверх экрана всем пользователям Vibe.</p>
+            </div>
+            <div class="section-tools">
+              <button class="tool ${ann.active ? 'primary' : ''}" onclick="saveAnnouncement(true)">Включить</button>
+              <button class="tool" onclick="saveAnnouncement(false)">Выключить</button>
+            </div>
+          </div>
+          <textarea id="announcementText" placeholder="Текст объявления...">${esc(ann.text || '')}</textarea>
+          <div class="content-card stat-card" style="padding:18px;border-radius:24px">
+            <div class="label">Статус</div>
+            <div class="value" style="font-size:22px;margin-top:10px">${ann.active ? 'включено' : 'выключено'}</div>
+          </div>
+        </div>`;
+    }
+    function broadcastHtml(){
+      const brd = state.broadcast || {};
+      return `
+        <div class="split">
+          <div class="section-head">
+            <div>
+              <h3>Рассылка</h3>
+              <p>Всплывающее сообщение для всех пользователей.</p>
+            </div>
+            <div class="section-tools">
+              <button class="tool primary" onclick="sendBroadcast()">Отправить всем</button>
+            </div>
+          </div>
+          <textarea id="broadcastText" placeholder="Текст сообщения...">${esc(brd.text || '')}</textarea>
+          <div class="content-card stat-card" style="padding:18px;border-radius:24px">
+            <div class="label">Последняя рассылка</div>
+            <div class="value" style="font-size:22px;margin-top:10px">${esc(brd.id || 'нет')}</div>
+          </div>
+        </div>`;
+    }
+    function techHtml(){
+      return `
+        <div class="split">
+          <div class="section-head">
+            <div>
+              <h3>Технический перерыв</h3>
+              <p>Включает режим обслуживания для обычных пользователей.</p>
+            </div>
+            <div class="section-tools">
+              <button class="tool ${state.tech ? 'primary' : ''}" onclick="setTech(true)">Включить</button>
+              <button class="tool" onclick="setTech(false)">Выключить</button>
+            </div>
+          </div>
+          <div class="content-card stat-card" style="padding:18px;border-radius:24px">
+            <div class="label">Статус</div>
+            <div class="value" style="font-size:24px;margin-top:10px">${state.tech ? 'тех. перерыв включён' : 'тех. перерыв выключен'}</div>
+            <div class="meta">Проверяется в реальном времени.</div>
+          </div>
+        </div>`;
+    }
+    function renderLog(item){
+      const when = item.ts ? new Date(item.ts).toLocaleString('ru-RU') : 'неизвестно';
+      return `
+        <div class="log-item">
+          <b>${esc(item.actorName || item.actorLogin || 'Админ')} • ${esc(item.action || 'Действие')}</b>
+          <div style="font-size:12px;color:var(--muted);line-height:1.5">${esc(item.details || '')}</div>
+          <div class="small">${esc(when)}${item.target ? ' • ' + esc(item.target) : ''}</div>
+        </div>`;
+    }
+    function userRow(id,u,mode){
+      const badges = [
+        u.verified ? '<span class="tag">V</span>' : '',
+        u.online ? '<span class="tag">online</span>' : '<span class="tag">offline</span>',
+        u.isAdmin ? '<span class="tag">admin flag</span>' : '',
+        u.isDeleted ? '<span class="tag">deleted</span>' : ''
+      ].join('');
+      const mainBtn = mode === 'verify'
+        ? `<button class="tool primary" onclick="toggleVerify('${id}')">${u.verified ? 'Снять [V]' : 'Дать [V]'}</button>`
+        : (u.isDeleted
+          ? `<button class="tool primary" onclick="restoreUser('${id}')">Восстановить</button>`
+          : `<button class="tool" onclick="deleteUser('${id}')">Удалить</button>`);
+      return `
+        <div class="row-card">
+          <div>
+            <div class="row-title">${esc(u.name || 'Без имени')} ${badges}</div>
+            <div class="row-sub">${esc(u.handle || '')}${u.bio ? ' • ' + esc(u.bio) : ''}</div>
+          </div>
+          <div class="row-actions">
+            ${mainBtn}
+            <button class="tool" onclick="toggleUserFlag('${id}')">${u.isAdmin ? 'Убрать флаг' : 'Сделать админом'}</button>
+          </div>
+        </div>`;
+    }
+    function adminRow(id,a){
+      const tabs = Object.entries(a.tabs || {}).filter(([,v]) => v).map(([k]) => TAB_DEFS.find(t => t.key === k)?.label || k);
+      return `
+        <div class="row-card">
+          <div>
+            <div class="row-title">${esc(a.name || 'Админ')} ${a.master ? '<span class="tag">owner</span>' : ''}</div>
+            <div class="row-sub">Логин: ${esc(a.login || '')}</div>
+            <div>${tabs.slice(0,4).map(t => `<span class="tag">${esc(t)}</span>`).join('') || '<span class="tag">без вкладок</span>'}</div>
+          </div>
+          <div class="row-actions">
+            <button class="tool" onclick="editAdminField('${id}','name')">Имя</button>
+            <button class="tool" onclick="editAdminField('${id}','login')">Логин</button>
+            <button class="tool" onclick="editAdminField('${id}','password')">Пароль</button>
+            <button class="tool" onclick="editAdminTabs('${id}')">Вкладки</button>
+            <button class="tool" onclick="removeAdmin('${id}')">Удалить</button>
+          </div>
+        </div>`;
+    }
+
+    function setUserMode(mode){ state.userMode = mode === 'delete' ? 'delete' : 'verify'; render(); }
+    function searchUsers(v){ state.filter = v || ''; render(); }
+
+    async function toggleVerify(id){
+      const snap = await db.ref(`users/${id}/verified`).once('value');
+      const val = !!snap.val();
+      await db.ref(`users/${id}/verified`).set(!val);
+      await db.ref(`users/${id}/hasSeenVerifyNotif`).set(val ? true : false);
+      await logAction(val ? 'remove_verify' : 'grant_verify', val ? 'Снята галочка' : 'Выдана галочка', id);
+      refreshAll();
+    }
+    async function deleteUser(id){
+      if (!confirm('Заблокировать аккаунт пользователя?')) return;
+      await db.ref(`users/${id}/isDeleted`).set(true);
+      await logAction('delete_user', 'Аккаунт переведён в удалённые', id);
+      refreshAll();
+    }
+    async function restoreUser(id){
+      await db.ref(`users/${id}/isDeleted`).set(null);
+      await logAction('restore_user', 'Аккаунт восстановлен', id);
+      refreshAll();
+    }
+    async function toggleUserFlag(id){
+      const snap = await db.ref(`users/${id}/isAdmin`).once('value');
+      const next = !snap.val();
+      await db.ref(`users/${id}/isAdmin`).set(next ? true : null);
+      await logAction(next ? 'grant_user_admin' : 'remove_user_admin', next ? 'Выдан флаг админа' : 'Снят флаг админа', id);
+      refreshAll();
+    }
+    async function setTech(on){
+      await db.ref('settings/techBreak').set(!!on);
+      await logAction(on ? 'tech_on' : 'tech_off', on ? 'Включён технический перерыв' : 'Отключён технический перерыв');
+      refreshAll();
+    }
+    async function saveAnnouncement(active){
+      const text = $('announcementText').value.trim();
+      if (active && !text) return alert('Введите текст объявления.');
+      await db.ref('settings/announcement').set({ active: !!active, text: text || '' });
+      await logAction(active ? 'announcement_on' : 'announcement_off', active ? 'Объявление включено' : 'Объявление выключено');
+      refreshAll();
+    }
+    async function sendBroadcast(){
+      const text = $('broadcastText').value.trim();
+      if (!text) return alert('Введите текст сообщения.');
+      const id = 'bc_' + now() + '_' + Math.floor(Math.random() * 1000);
+      await db.ref('settings/broadcast').set({ id, text });
+      await logAction('broadcast', 'Отправлена глобальная рассылка', id);
+      refreshAll();
+    }
+
+    function openModal(html, wide=false){
+      const root = $('modalRoot');
+      root.style.display = 'flex';
+      root.innerHTML = `
+        <div class="modal ${wide ? 'wide' : ''}" onclick="event.stopPropagation()">${html}</div>`;
+    }
+    function closeModal(){ $('modalRoot').style.display = 'none'; $('modalRoot').innerHTML = ''; }
+
+    function openAdminWizard(){
+      state.wizard = { step: 0, data: { tabs: permsObject() } };
+      renderAdminWizard();
+    }
+    function renderAdminWizard(){
+      const steps = ['Имя', 'Логин', 'Пароль', 'Вкладки'];
+      const { step, data } = state.wizard;
+      let body = '';
+      if (step === 0) body = `<input id="wizName" value="${esc(data.name || '')}" placeholder="Введите имя админа">`;
+      if (step === 1) body = `<input id="wizLogin" value="${esc(data.login || '')}" placeholder="Введите логин админа">`;
+      if (step === 2) body = `<input id="wizPass" type="password" value="${esc(data.password || '')}" placeholder="Введите пароль">`;
+      if (step === 3) body = `<div class="admin-perms">${TAB_DEFS.map(t => `<label class="perm"><span>${esc(t.label)}</span><input type="checkbox" data-tab="${t.key}" ${data.tabs && data.tabs[t.key] ? 'checked' : ''}></label>`).join('')}</div>`;
+      openModal(`
+        <div class="modal-head">
+          <div>
+            <h3>Добавить админа</h3>
+            <p>Пошагово: имя, логин, пароль, вкладки.</p>
+          </div>
+          <button class="chip-btn" onclick="closeModal()">✕</button>
+        </div>
+        <div class="steps">${steps.map((s,i)=>`<span class="step ${i===step?'active':''}">${s}</span>`).join('')}</div>
+        ${body}
+        <div class="footer-actions">
+          <button class="tool" onclick="wizardBack()">Назад</button>
+          <button class="tool primary" onclick="wizardNext()">Далее</button>
+        </div>`);
+    }
+    function wizardBack(){
+      if (!state.wizard) return;
+      state.wizard.step = Math.max(0, state.wizard.step - 1);
+      renderAdminWizard();
+    }
+    async function wizardNext(){
+      const { step, data } = state.wizard;
+      if (step === 0) {
+        const v = $('wizName').value.trim();
+        if (!v) return alert('Введите имя.');
+        data.name = v;
+      } else if (step === 1) {
+        const v = $('wizLogin').value.trim().toLowerCase();
+        if (!v) return alert('Введите логин.');
+        data.login = v;
+      } else if (step === 2) {
+        const v = $('wizPass').value;
+        if (!v || v.length < 4) return alert('Пароль должен быть минимум 4 символа.');
+        data.password = v;
+      } else if (step === 3) {
+        const tabs = {};
+        TAB_DEFS.forEach(t => { tabs[t.key] = !!document.querySelector(`[data-tab="${t.key}"]`)?.checked; });
+        data.tabs = tabs;
+        const id = 'admin_' + now();
+        await db.ref(`adminPanel/admins/${id}`).set({
+          name: data.name,
+          login: data.login,
+          passwordHash: btoa(data.password),
+          master: false,
+          tabs: permsObject(data.tabs),
+          createdAt: now()
+        });
+        await logAction('create_admin', 'Создан новый админ', data.login);
+        state.wizard = null;
+        closeModal();
+        refreshAll();
+        return;
+      }
+      state.wizard.step = Math.min(3, step + 1);
+      renderAdminWizard();
+    }
+    async function editAdminField(id, field){
+      const snap = await db.ref(`adminPanel/admins/${id}`).once('value');
+      const admin = snap.val();
+      if (!admin) return alert('Админ не найден.');
+      let value = '';
+      if (field === 'name') value = prompt('Введите новое имя', admin.name || '') || '';
+      if (field === 'login') value = prompt('Введите новый логин', admin.login || '') || '';
+      if (field === 'password') value = prompt('Введите новый пароль', '') || '';
+      if (!value) return;
+      if (field === 'password') await db.ref(`adminPanel/admins/${id}/passwordHash`).set(btoa(value));
+      if (field === 'login') await db.ref(`adminPanel/admins/${id}/login`).set(value.trim().toLowerCase());
+      if (field === 'name') await db.ref(`adminPanel/admins/${id}/name`).set(value.trim());
+      await logAction(`edit_admin_${field}`, `Изменено поле ${field}`, id);
+      refreshAll();
+    }
+    function editAdminTabs(id){
+      const admin = state.admins[id];
+      if (!admin) return alert('Админ не найден.');
+      const tabs = admin.tabs || permsObject();
+      openModal(`
+        <div class="modal-head">
+          <div>
+            <h3>Вкладки админа</h3>
+            <p>Управляй доступом к разделам.</p>
+          </div>
+          <button class="chip-btn" onclick="closeModal()">✕</button>
+        </div>
+        <div class="admin-perms">
+          ${TAB_DEFS.map(t => `<label class="perm"><span>${esc(t.label)}</span><input type="checkbox" data-edit-tab="${t.key}" ${tabs[t.key] !== false ? 'checked' : ''}></label>`).join('')}
+        </div>
+        <div class="footer-actions">
+          <button class="tool primary" onclick="saveAdminTabs('${id}')">Сохранить</button>
+        </div>`, true);
+    }
+    async function saveAdminTabs(id){
+      const tabs = {};
+      TAB_DEFS.forEach(t => tabs[t.key] = !!document.querySelector(`[data-edit-tab="${t.key}"]`)?.checked);
+      await db.ref(`adminPanel/admins/${id}/tabs`).set(permsObject(tabs));
+      await logAction('edit_admin_tabs', 'Изменены вкладки админа', id);
+      closeModal();
+      refreshAll();
+    }
+    async function removeAdmin(id){
+      const admin = state.admins[id];
+      if (!admin) return alert('Админ не найден.');
+      if (admin.master) return alert('Основной аккаунт удалить нельзя.');
+      if (!confirm('Удалить этого админа?')) return;
+      await db.ref(`adminPanel/admins/${id}`).remove();
+      await logAction('remove_admin', 'Удалён админ', admin.login || id);
+      refreshAll();
+    }
+
+    window.addEventListener('click', (e) => {
+      if (e.target.id === 'modalRoot') closeModal();
+    });
+    window.addEventListener('resize', () => {
+      if (state.session) renderTabs();
+    });
+    window.login = login;
+    window.logout = logout;
+    window.refreshAll = refreshAll;
+    window.setTab = setTab;
+    window.setUserMode = setUserMode;
+    window.searchUsers = searchUsers;
+    window.toggleVerify = toggleVerify;
+    window.deleteUser = deleteUser;
+    window.restoreUser = restoreUser;
+    window.toggleUserFlag = toggleUserFlag;
+    window.setTech = setTech;
+    window.saveAnnouncement = saveAnnouncement;
+    window.sendBroadcast = sendBroadcast;
+    window.openAdminWizard = openAdminWizard;
+    window.wizardBack = wizardBack;
+    window.wizardNext = wizardNext;
+    window.editAdminField = editAdminField;
+    window.editAdminTabs = editAdminTabs;
+    window.saveAdminTabs = saveAdminTabs;
+    window.removeAdmin = removeAdmin;
+
+    (async function boot() {
+      showLogin();
+      try {
+        await ensureRootAdmin();
+        await loadSnapshot();
+        render();
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  </script>
+</body>
+</html>
